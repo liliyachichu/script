@@ -13,7 +13,6 @@ from requests.sessions import RequestsCookieJar
 from Crypto.Cipher import AES
 from Crypto.SelfTest.st_common import a2b_hex, b2a_hex
 from Crypto.Util.Padding import pad, unpad
-import Crypto
 md5 = hashlib.md5()
 urllib3.disable_warnings()
 
@@ -330,11 +329,11 @@ def main(): #主体程序
             max_retry += 1
 
 
-cookie = '1'        # cookie 小程序抓包cookie
+cookie = 'ASP.NET_SessionId=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2NzY5NjUzNTcuNzQ4MjM5NSwiZXhwIjoxNjc2OTY4OTU3Ljc0ODIzOTUsInN1YiI6IllOVy5WSVAiLCJqdGkiOiIyMDIzMDIyMTE1NDIwMCIsInZhbCI6InhLYXpBUUlBQUFBRWJtOXVaUnh2Y1hJMWJ6VlBkRU5pVGw5R1QzcEdURFpTV1dzMlRGRTRPRkZqQVJ4dlZUSTJXSFF0TTNrM1gxVkJcclxuYmpSbk4yazVNa0Y1YVc5eE4xSnJDell4TGpFMk5DNDBNeTR6QUFBQUFBQUFBQT09In0.ifTFV6H0wPvYYi549Sswm6eQsfqOWBiiYvLh1FCp9cQ; path=/'        # cookie 小程序抓包cookie
 wait_speed = '1000' # wait_speed 等待开始刷新时间，单位毫秒
 buy_speed = '1000'  # buy_speed 抢购间隔，单位毫秒
 p_id = '1'       # p_id 疫苗产品id（1是九价）
-id = '1843'            # id 门诊医院id
+id = '4184'            # id 门诊医院id
 
 if __name__ == '__main__':
     # cookie = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2NDk5NTY1MDIuNzk0MTMyMiwiZXhwIjoxNjQ5OTYwMTAyLjc5NDEzMjIsInN1YiI6IllOVy5WSVAiLCJqdGkiOiIyMDIyMDQxNTAxMTUwMiIsInZhbCI6IkwydlFBQUlBQUFBUVlUTTBZMlV3TUdOak5HTmtOVGN4TWh4dmNYSTFielZNY0VsRWRFMXFZMnR6UzA1ckxXTkdNelpOTldKekFCeHZcclxuVlRJMldIUTJVRlZNTVU5TlNFMTVlV1JOVDFOcGRtSnNTalJSRHpFeU5DNHlNall1TWpVeExqSXpNQUFBQUFBQUFBQT0ifQ.3-Uu3qizNJvgQDm7sTPCAEkU-Hp2lxmYwfeqIOPbaGY'
@@ -353,7 +352,6 @@ if __name__ == '__main__':
     file_config()  #初始化用户信息
     getUserInfo()  # 获取用户信息
     getSign(cookie)  # 生成解密秘钥
-    print('\t2022-04-17版本')
 
     for i in range(100):
         mxid = {}  # 清空需要遍历的字典 {"日期":"产品mxid"}
