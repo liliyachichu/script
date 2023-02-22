@@ -9,28 +9,30 @@ import re
 import time
 import hashlib
 import requests
-from requests.sessions import RequestsCookieJar
 from Crypto.Cipher import AES
 from Crypto.SelfTest.st_common import a2b_hex, b2a_hex
 from Crypto.Util.Padding import pad, unpad
+
 md5 = hashlib.md5()
 urllib3.disable_warnings()
 
-x = requests.Session() #实例化requests.Session对象
-url = "https://cloud.cn2030.com" #URL变量
-proxies = {'https': '127.0.0.1:8888','http':'127.0.0.1:8888'} #测试代{过}{滤}理
-mxid = {} # 需要遍历的字典 {"日期":"产品mxid"}
+x = requests.Session()  # 实例化requests.Session对象
+url = "https://cloud.cn2030.com"  # URL变量
+proxies = {'https': '127.0.0.1:8888', 'http': '127.0.0.1:8888'}  # 测试代{过}{滤}理
+mxid = {}  # 需要遍历的字典 {"日期":"产品mxid"}
 date_mxid = []  # 接种日期列表 ['04-17','04-18']
 
-def getZftsl(): # 请求头获取Zftsl字段
-    strtime = str(round(time.time() * 100))
-    str1 = "zfsw_"+strtime
+
+# 请求头获取Zftsl字段
+def getZftsl():
+    str_time = str(round(time.time() * 100))
+    str1 = "zfsw_" + str_time
     md5.update(str1.encode("utf-8"))
     value = md5.hexdigest()
     return value
 
 
-def getDecrypt(k, value, iv=b'1234567890000000'): # Body解密，CBC模式，pkcs7填充，数据块128，偏移1234567890000000
+def getDecrypt(k, value, iv=b'1234567890000000'):  # Body解密，CBC模式，pkcs7填充，数据块128，偏移1234567890000000
     try:
         cryptor = AES.new(k.encode('utf-8'), AES.MODE_CBC, iv)
         value_hex = a2b_hex(value)
@@ -42,7 +44,7 @@ def getDecrypt(k, value, iv=b'1234567890000000'): # Body解密，CBC模式，pkc
         return False
 
 
-def getEncrypt(k, value, iv=b'1234567890000000'): # Body加密，CBC模式，pkcs7填充，数据块128，偏移1234567890000000
+def getEncrypt(k, value, iv=b'1234567890000000'):  # Body加密，CBC模式，pkcs7填充，数据块128，偏移1234567890000000
     try:
         value = value.encode('UTF-8')
         cryptor = AES.new(k.encode('utf-8'), AES.MODE_CBC, iv)
@@ -56,7 +58,7 @@ def getEncrypt(k, value, iv=b'1234567890000000'): # Body加密，CBC模式，pkc
         return None
 
 
-def getSign(cookie): # 获取用户签名（用于解密）
+def getSign(cookie):  # 获取用户签名（用于解密）
     global Sign
     try:
         data = cookie.split('.')[1]
@@ -76,30 +78,20 @@ def getSign(cookie): # 获取用户签名（用于解密）
         return False
 
 
-def getHeaders(): #返回请求头
-    # 'Cookie': 'ASP.NET_SessionId=' + cookie,
-
-    # 电脑UA
-    # 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.143 Safari/537.36 MicroMessenger/7.0.9.501 NetType/WIFI MiniProgramEnv/Windows WindowsWechat',
-
-    # iOS手机UA
-    # 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.20(0x1800142f) NetType/WIFI Language/zh_CN',
-
-    # Andorid手机UA
-    # 'User-Agent': 'Mozilla/5.0 (Linux; Android 11; M2012K11AC Build/RKQ1.200826.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/78.0.3904.62 XWEB/2691 MMWEBSDK/201101 Mobile Safari/537.36 MMWEBID/8628 MicroMessenger/7.0.21.1783(0x27001543) Process/tools WeChat/arm64 Weixin GPVersion/1 NetType/WIFI Language/zh_CN ABI/arm64',
+def getHeaders():  # 返回请求头
     headers = {
         'Host': 'cloud.cn2030.com',
         'Connection': 'keep-alive',
         'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.20(0x18001433) NetType/WIFI Language/zh_CN',
         'content-type': 'application/json',
         'zftsl': getZftsl(),
-        'Referer': 'https://servicewechat.com/wx2c7f0f3c30d99445/92/page-frame.html',
+        'Referer': 'https://servicewechat.com/wx2c7f0f3c30d99445/97/page-frame.html',
         'Accept-Encoding': 'gzip,deflate, br'
     }
     return headers
 
 
-def getPayload(p_id, id, scdate): #返回Payload
+def getPayload(p_id, id, scdate):  # 返回Payload
     payload = {
         'act': 'GetCustSubscribeDateDetail',
         'pid': p_id,
@@ -109,16 +101,16 @@ def getPayload(p_id, id, scdate): #返回Payload
     return payload
 
 
-def getMxid(scdate): #获取scdate日期当天的产品列表
+def getMxid(scdate):  # 获取scdate日期当天的产品列表
     try:
         list1 = []
         r = x.get(url=url + '/sc/wx/HandlerSubscribe.ashx', headers=getHeaders(), params=getPayload(p_id, id, scdate),
                   timeout=1, verify=False)
         j = getDecrypt(Sign, r.text)
-        if (j["status"] == 200):
-            if ('mxid' in str(j)):
+        if j["status"] == 200:
+            if 'mxid' in str(j):
                 for i in j["list"]:
-                    if (i['qty'] > 0):
+                    if i['qty'] > 0:
                         list1.insert(0, i['mxid'])
                 mxid[scdate] = list1
                 return True
@@ -133,7 +125,7 @@ def getMxid(scdate): #获取scdate日期当天的产品列表
         return False
 
 
-def getDate(): #获取疫苗可预约时间
+def getDate():  # 获取疫苗可预约时间
     current_date = datetime.datetime.now().strftime('%Y%m')
     payload = {
         'act': 'GetCustSubscribeDateAll',
@@ -145,10 +137,10 @@ def getDate(): #获取疫苗可预约时间
         r = x.get(url=url + '/sc/wx/HandlerSubscribe.ashx', params=payload, headers=getHeaders(), timeout=1,
                   verify=False)
         j = json.loads(r.text)
-        if (j["status"] == 200):
-            if ('enable' in str(j)):
+        if j["status"] == 200:
+            if 'enable' in str(j):
                 for date in j["list"]:
-                    if (date["enable"] == True):
+                    if date["enable"]:
                         date_mxid.insert(0, date["date"])
                 return True
             else:
@@ -157,7 +149,7 @@ def getDate(): #获取疫苗可预约时间
         print("获取日期失败：", e)
 
 
-def set_Cookie(r): #设置cookie
+def set_Cookie(r):  # 设置cookie
     global cookie
     try:
         del x.cookies['ASP.NET_SessionId']
@@ -165,7 +157,7 @@ def set_Cookie(r): #设置cookie
         x.cookies.update(cookies)
         cookie_dict = requests.utils.dict_from_cookiejar(r.cookies)
         new_cookie = cookie_dict['ASP.NET_SessionId']
-        update_config(cookie,new_cookie)
+        update_config(cookie, new_cookie)
         cookie = new_cookie
         return True
     except Exception as e:
@@ -173,7 +165,7 @@ def set_Cookie(r): #设置cookie
         return False
 
 
-def yanZheng_code(mxid): #请求查询是否获取验证码
+def yanZheng_code(mxid):  # 请求查询是否获取验证码
     global r_cookie
     payload = {
         'act': 'GetCaptcha',
@@ -185,7 +177,7 @@ def yanZheng_code(mxid): #请求查询是否获取验证码
         j = json.loads(r.text)
         r_cookie = r
         set_Cookie(r)
-        if (j['status'] == 200):
+        if j['status'] == 200:
             return True
         else:
             print('状态: 有验证码：', r.text)
@@ -195,17 +187,17 @@ def yanZheng_code(mxid): #请求查询是否获取验证码
         return False
 
 
-def OrderPost(mxid, scdate): #提交订单信息
+def OrderPost(mxid, scdate):  # 提交订单信息
     try:
-        postContext = '{"birthday":"%s","tel":"%s","sex":%s,"cname":"%s","doctype":1,"idcard":"%s","mxid":"%s","date":"%s","pid":"%s","Ftime":1,"guid":""}' % (
+        post_context = '{"birthday":"%s","tel":"%s","sex":%s,"cname":"%s","doctype":1,"idcard":"%s","mxid":"%s","date":"%s","pid":"%s","Ftime":1,"guid":""}' % (
             birthday, tel, sex, cname, idcard, mxid, scdate, p_id)
-        postContext = getEncrypt(Sign, postContext)
-        r = x.post(url=url + '/sc/api/User/OrderPost', data=postContext,timeout=1, headers=getHeaders(), verify=False)
-        if ("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" not in r.headers.get('set-cookie')):
+        post_context = getEncrypt(Sign, post_context)
+        r = x.post(url=url + '/sc/api/User/OrderPost', data=post_context, timeout=1, headers=getHeaders(), verify=False)
+        if "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" not in r.headers.get('set-cookie'):
             set_Cookie(r_cookie)
-        if (r.status_code == 200):
+        if r.status_code == 200:
             j = json.loads(r.text)
-            if (j['status'] == 200):
+            if j['status'] == 200:
                 print("状态: " + j["msg"], end='')
                 return True
             else:
@@ -217,7 +209,7 @@ def OrderPost(mxid, scdate): #提交订单信息
         print("OrderPost：", e)
 
 
-def GetOrderStatus(): #获取订单信息状态
+def GetOrderStatus():  # 获取订单信息状态
     try:
         payload = {
             'act': 'GetOrderStatus'
@@ -225,7 +217,7 @@ def GetOrderStatus(): #获取订单信息状态
         r = x.get(url=url + '/sc/wx/HandlerSubscribe.ashx', params=payload, headers=getHeaders(), verify=False,
                   timeout=1)
         j = json.loads(r.text)
-        if (j['status'] == 200):
+        if j['status'] == 200:
             print("\t结果: " + j["msg"])
             input('抢购成功！退出程序。')
             sys.exit(0)
@@ -236,7 +228,7 @@ def GetOrderStatus(): #获取订单信息状态
         print("GetOrderStatus：", e)
 
 
-def getUserInfo(): #获取用户基本信息
+def getUserInfo():  # 获取用户基本信息
     global birthday, tel, cname, sex, idcard
     payload = {
         'act': 'User'
@@ -244,13 +236,13 @@ def getUserInfo(): #获取用户基本信息
     try:
         r = x.get(url=url + '/sc/wx/HandlerSubscribe.ashx', params=payload, headers=getHeaders(), verify=False)
         j = json.loads(r.text)
-        if (j['status'] == 200):
+        if j['status'] == 200:
             birthday = j['user']['birthday']
             tel = j['user']['tel']
             sex = j['user']['sex']
             cname = j['user']['cname']
             idcard = j['user']['idcard']
-            print("登录成功，用户：", cname,end='')
+            print("登录成功，用户：", cname, end='')
             return True
         else:
             print('Cookie出错：%s' % r.text)
@@ -264,16 +256,16 @@ def getUserInfo(): #获取用户基本信息
         return False
 
 
-def file_config(): #初始化配置文件
+def file_config():  # 初始化配置文件
     global cookie
     global wait_speed
     global buy_speed
     global p_id
     global id
     cf = configparser.RawConfigParser()
-    if (os.path.exists('jiujia.ini')):
+    if os.path.exists('./jiujia.ini'):
         try:
-            cf.read("jiujia.ini", encoding='utf-8')
+            cf.read("./jiujia.ini", encoding='utf-8')
             cookie = cf.get("jiujia", "cookie")
             wait_speed = cf.get("jiujia", "wait_speed")
             buy_speed = cf.get("jiujia", "buy_speed")
@@ -292,7 +284,7 @@ def file_config(): #初始化配置文件
         sys.exit(0)
 
 
-def update_config(old_cookie, new_cookie): #更新配置文件中的Cookie
+def update_config(old_cookie, new_cookie):  # 更新配置文件中的Cookie
     file_data = ""
     with open('jiujia.ini', "r", encoding="UTF-8") as f:
         for line in f:
@@ -303,7 +295,7 @@ def update_config(old_cookie, new_cookie): #更新配置文件中的Cookie
         f.write(file_data)
 
 
-def main(): #主体程序
+def main():  # 主体程序
     for i in date_mxid:  # 循环日期列表获取接种列表
         max_retry = 0
         while max_retry < 3:
@@ -329,11 +321,11 @@ def main(): #主体程序
             max_retry += 1
 
 
-cookie = 'ASP.NET_SessionId=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2NzY5NjUzNTcuNzQ4MjM5NSwiZXhwIjoxNjc2OTY4OTU3Ljc0ODIzOTUsInN1YiI6IllOVy5WSVAiLCJqdGkiOiIyMDIzMDIyMTE1NDIwMCIsInZhbCI6InhLYXpBUUlBQUFBRWJtOXVaUnh2Y1hJMWJ6VlBkRU5pVGw5R1QzcEdURFpTV1dzMlRGRTRPRkZqQVJ4dlZUSTJXSFF0TTNrM1gxVkJcclxuYmpSbk4yazVNa0Y1YVc5eE4xSnJDell4TGpFMk5DNDBNeTR6QUFBQUFBQUFBQT09In0.ifTFV6H0wPvYYi549Sswm6eQsfqOWBiiYvLh1FCp9cQ; path=/'        # cookie 小程序抓包cookie
-wait_speed = '1000' # wait_speed 等待开始刷新时间，单位毫秒
+cookie = 'ASP.NET_SessionId=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2NzY5NjUzNTcuNzQ4MjM5NSwiZXhwIjoxNjc2OTY4OTU3Ljc0ODIzOTUsInN1YiI6IllOVy5WSVAiLCJqdGkiOiIyMDIzMDIyMTE1NDIwMCIsInZhbCI6InhLYXpBUUlBQUFBRWJtOXVaUnh2Y1hJMWJ6VlBkRU5pVGw5R1QzcEdURFpTV1dzMlRGRTRPRkZqQVJ4dlZUSTJXSFF0TTNrM1gxVkJcclxuYmpSbk4yazVNa0Y1YVc5eE4xSnJDell4TGpFMk5DNDBNeTR6QUFBQUFBQUFBQT09In0.ifTFV6H0wPvYYi549Sswm6eQsfqOWBiiYvLh1FCp9cQ; path=/'  # cookie 小程序抓包cookie
+wait_speed = '1000'  # wait_speed 等待开始刷新时间，单位毫秒
 buy_speed = '1000'  # buy_speed 抢购间隔，单位毫秒
-p_id = '1'       # p_id 疫苗产品id（1是九价）
-id = '4184'            # id 门诊医院id
+p_id = '1'  # p_id 疫苗产品id（1是九价）
+id = '4184'  # id 门诊医院id
 
 if __name__ == '__main__':
     # cookie = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2NDk5NTY1MDIuNzk0MTMyMiwiZXhwIjoxNjQ5OTYwMTAyLjc5NDEzMjIsInN1YiI6IllOVy5WSVAiLCJqdGkiOiIyMDIyMDQxNTAxMTUwMiIsInZhbCI6IkwydlFBQUlBQUFBUVlUTTBZMlV3TUdOak5HTmtOVGN4TWh4dmNYSTFielZNY0VsRWRFMXFZMnR6UzA1ckxXTkdNelpOTldKekFCeHZcclxuVlRJMldIUTJVRlZNTVU5TlNFMTVlV1JOVDFOcGRtSnNTalJSRHpFeU5DNHlNall1TWpVeExqSXpNQUFBQUFBQUFBQT0ifQ.3-Uu3qizNJvgQDm7sTPCAEkU-Hp2lxmYwfeqIOPbaGY'
@@ -348,8 +340,7 @@ if __name__ == '__main__':
     # }
     # requests.utils.add_dict_to_cookiejar(x.cookies, cookie_2) #3.设置Cookie
 
-
-    file_config()  #初始化用户信息
+    file_config()  # 初始化用户信息
     getUserInfo()  # 获取用户信息
     getSign(cookie)  # 生成解密秘钥
 
