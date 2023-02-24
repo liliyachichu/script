@@ -106,7 +106,8 @@ def getMxid(scdate):  # 获取scdate日期当天的产品列表
         list1 = []
         r = x.get(url=url + '/sc/wx/HandlerSubscribe.ashx', headers=getHeaders(), params=getPayload(p_id, id, scdate),
                   timeout=1, verify=False)
-        j = getDecrypt(Sign, r.text)
+        # j = getDecrypt(Sign, r.text)
+        j = r.json()
         if j["status"] == 200:
             if 'mxid' in str(j):
                 for i in j["list"]:
@@ -191,7 +192,7 @@ def OrderPost(mxid, scdate):  # 提交订单信息
     try:
         post_context = '{"birthday":"%s","tel":"%s","sex":%s,"cname":"%s","doctype":1,"idcard":"%s","mxid":"%s","date":"%s","pid":"%s","Ftime":1,"guid":""}' % (
             birthday, tel, sex, cname, idcard, mxid, scdate, p_id)
-        post_context = getEncrypt(Sign, post_context)
+        # post_context = getEncrypt(Sign, post_context)
         r = x.post(url=url + '/sc/api/User/OrderPost', data=post_context, timeout=1, headers=getHeaders(), verify=False)
         if "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" not in r.headers.get('set-cookie'):
             set_Cookie(r_cookie)
@@ -231,29 +232,27 @@ def GetOrderStatus():  # 获取订单信息状态
 def getUserInfo():  # 获取用户基本信息
     global birthday, tel, cname, sex, idcard
     payload = {
-        'act': 'User'
+        'act': 'auth'
     }
     try:
         r = x.get(url=url + '/sc/wx/HandlerSubscribe.ashx', params=payload, headers=getHeaders(), verify=False)
         j = json.loads(r.text)
-        if j['status'] == 200:
+        print(j)
+        if j['status'] == 201:
             birthday = j['user']['birthday']
             tel = j['user']['tel']
             sex = j['user']['sex']
             cname = j['user']['cname']
             idcard = j['user']['idcard']
             print("登录成功，用户：", cname, end='')
-            return True
         else:
             print('Cookie出错：%s' % r.text)
             input('退出程序')
             sys.exit(0)
-            return False
     except Exception as e:
         print("无法正常运行", e)
         input('退出程序')
         sys.exit(0)
-        return False
 
 
 def file_config():  # 初始化配置文件
